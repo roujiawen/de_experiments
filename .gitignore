@@ -3,3 +3,5 @@
 *.pyc
 *.ipynb
 c_code.cpp
+venv/
+diff_evo/E*/
