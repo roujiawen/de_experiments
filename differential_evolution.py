@@ -6,8 +6,6 @@ from copy import deepcopy
 import numpy as np
 from model import Model
 
-from PIL import Image
-
 from multiprocess_setup import *
 #assert
 
@@ -113,23 +111,6 @@ def evolve():
                     population[indiv_id] = model
                     model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
 
-def generate_summary_graph():
-    rows = []
-    imgs = [0]*POPULATION_SIZE
-    for gen_id in range(NUM_GENERATION+1):
-
-        for indiv_id in range(POPULATION_SIZE):
-            try:
-                img = Image.open(OUT_PATH+"Gen{}_{}.png".format(gen_id, indiv_id))
-                img.thumbnail([250, 250], Image.ANTIALIAS)
-                imgs[indiv_id] = img
-            except IOError:
-                pass
-        row = np.hstack((np.asarray(i) for i in imgs))
-        rows.append(row)
-    imgs_comb = np.vstack((i for i in rows))
-    imgs_comb = Image.fromarray(imgs_comb)
-    imgs_comb.save(OUT_PATH+'summary.png')
 
 if __name__ == "__main__":
     import time
