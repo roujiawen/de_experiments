@@ -10,6 +10,8 @@ from sys import platform
 if platform == "darwin":
     import matplotlib
     matplotlib.use('TkAgg')
+else:
+    matplotlib.use('agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
