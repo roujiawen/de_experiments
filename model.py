@@ -5,10 +5,11 @@ import time
 import numpy as np
 
 
-# MacOS fix
+# set matplotlib backend 
+import matplotlib
 from sys import platform
 if platform == "darwin":
-    import matplotlib
+
     matplotlib.use('TkAgg')
 else:
     matplotlib.use('agg')
