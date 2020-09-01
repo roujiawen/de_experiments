@@ -3,10 +3,16 @@ from collections import OrderedDict
 import time
 
 import numpy as np
-import sys
-if sys.argv[0]!='viewer_ui.py':
-    import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
+
+
+# MacOS fix
+from sys import platform
+if platform == "darwin":
+    import matplotlib
+    matplotlib.use('TkAgg')
+
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 
 import c_code as c_model
 
