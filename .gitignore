@@ -4,4 +4,5 @@
 *.ipynb
 c_code.cpp
 venv/
-output/[^.py]
+output/*
+!output/*.py
