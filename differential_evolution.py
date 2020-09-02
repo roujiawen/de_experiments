@@ -9,10 +9,24 @@ from model import Model
 from multiprocess_setup import *
 #assert
 
+import sys
 
-from diff_evo.E1 import (PARAM_LIMITS, POPULATION_SIZE, NUM_GENERATION,
-                        SCALING_PARAM, CROSSOVER_RATE, TRIAL_NAME, DENSITIES,
-                        MAX_OR_MIN, NUM_REPEATS, STARTING_REP_ID)
+TRIAL_NAME = sys.argv[1]
+
+from importlib import import_module
+exper_config = import_module("output.{}".format(TRIAL_NAME))
+SIGNIFICANT_RANGE = getattr(exper_config, "SIGNIFICANT_RANGE")
+WHICH_ORDER_PARAM = getattr(exper_config, "WHICH_ORDER_PARAM")
+GENERAL_PARAMS = getattr(exper_config, "GENERAL_PARAMS")
+PARAM_LIMITS = getattr(exper_config, "PARAM_LIMITS")
+POPULATION_SIZE = getattr(exper_config, "POPULATION_SIZE")
+NUM_GENERATION = getattr(exper_config, "NUM_GENERATION")
+SCALING_PARAM = getattr(exper_config, "SCALING_PARAM")
+CROSSOVER_RATE = getattr(exper_config, "CROSSOVER_RATE")
+DENSITIES = getattr(exper_config, "DENSITIES")
+MAX_OR_MIN = getattr(exper_config, "MAX_OR_MIN")
+NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
+STARTING_REP_ID = getattr(exper_config, "STARTING_REP_ID")
 
 
 def randomize(param):
@@ -53,7 +67,7 @@ def evolve():
     # Random genes for initial population
     for indiv_id in range(POPULATION_SIZE):
         gene = random_gene()
-        model = Model(gene)
+        model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
         models.append(model)
 
     for rep_id in range(NUM_REPEATS):
@@ -90,7 +104,7 @@ def evolve():
                 else this_gene[each_param]
                 for j, each_param in enumerate(this_gene)
             }
-            model = Model(trial)
+            model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
             models.append(model)
 
         for rep_id in range(NUM_REPEATS):
@@ -117,14 +131,14 @@ if __name__ == "__main__":
     start_time = time.time()
     if len(DENSITIES) == 0:
         EXPER_NAME = TRIAL_NAME
-        OUT_PATH = "diff_evo/{}/".format(EXPER_NAME)
+        OUT_PATH = "output/{}/".format(EXPER_NAME)
         if not os.path.exists(OUT_PATH):
             os.makedirs(OUT_PATH)
         evolve()
     elif DENSITIES[0] is None:
         for i, _ in enumerate(DENSITIES):
             EXPER_NAME = "{}_{}".format(TRIAL_NAME, str(i))
-            OUT_PATH = "diff_evo/{}/".format(EXPER_NAME)
+            OUT_PATH = "output/{}/".format(EXPER_NAME)
             if not os.path.exists(OUT_PATH):
                 os.makedirs(OUT_PATH)
             evolve()
@@ -137,7 +151,7 @@ if __name__ == "__main__":
                 EXPER_NAME = "{}_{}".format(TRIAL_NAME, str(i))
             else:
                 EXPER_NAME = "{}".format(TRIAL_NAME)
-            OUT_PATH = "diff_evo/{}/".format(EXPER_NAME)
+            OUT_PATH = "output/{}/".format(EXPER_NAME)
             if not os.path.exists(OUT_PATH):
                 os.makedirs(OUT_PATH)
             evolve()

@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 
-# set matplotlib backend 
+# set matplotlib backend
 import matplotlib
 from sys import platform
 if platform == "darwin":
@@ -20,10 +20,6 @@ from matplotlib.collections import LineCollection
 import c_code as c_model
 
 from weave_compile import N_GLOBAL_STATS
-
-from diff_evo.E1 import SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS
-
-
 
 def counts2slices(counts):
     """Convert a list of counts to cummulative slices.
@@ -116,21 +112,18 @@ def gen_internal_params(uprm, general_params):
     return internal_params
 
 class Model(object):
-    def __init__(self, gene, which_order_param=None, general_params=None):
-        if which_order_param is None:
-            which_order_param = WHICH_ORDER_PARAM
-        if general_params is None:
-            self.general_params = GENERAL_PARAMS
-        else:
-            self.general_params = general_params
+    def __init__(self, gene, significant_range, which_order_param, general_params, num_repeats):
+        self.which_order_param = which_order_param
+        self.num_repeats = num_repeats
+        self.general_params = general_params
         self.repeats = [Repeat(gene,
             np.random.RandomState((_+int(time.time()*1e6)) % 4294967296),
-            which_order_param, self.general_params) for _ in range(NUM_REPEATS)]
+            which_order_param, general_params, significant_range) for _ in range(num_repeats)]
         self.gene = gene
 
     @property
     def fitness(self):
-        return np.max([_.fitness for _ in self.repeats])
+        return np.mean([_.fitness for _ in self.repeats])
 
     def save(self, name):
         best_repeat = np.argmax([_.fitness for _ in self.repeats])
@@ -138,19 +131,20 @@ class Model(object):
             "gene": self.gene,
             "general_params": self.general_params,
             "fitness": self.fitness,
-            "global_stats": self.repeats[best_repeat].global_stats.tolist()
+            "global_stats": self.repeats[best_repeat].global_stats[self.which_order_param,:].tolist()
         }
         with open("{}.json".format(name), "w") as outfile:
             json.dump(data, outfile)
         self.plot(save=name)
 
     def plot(self, save=None):
-        alpha = 0.5
+        # smaller file size
+        alpha = 1 #0.5
         velocity_trace = 0.3
         scale_factor = self.repeats[0].scale_factor
         colors = ["blue", "red", "green"]
-        figsize = (3.3*(NUM_REPEATS-1)+3, 3.53)
-        dpi = 100
+        figsize = (3.3*(self.num_repeats-1)+3, 3.53)
+        dpi = 50 #100
         plt.figure(figsize=figsize, dpi=dpi)
         for subplot_id, rep in enumerate(self.repeats):
             # Prepare for making plots
@@ -193,11 +187,12 @@ class Model(object):
 
 
 class Repeat(object):
-    def __init__(self, gene, rand_state, which_order_param, general_params):
+    def __init__(self, gene, rand_state, which_order_param, general_params, significant_range):
         self.gene=gene
         self.rand_state = rand_state
         self.which_order_param = which_order_param
         self.general_params = general_params
+        self.significant_range = significant_range
 
     def init(self):
         general_params = self.general_params
@@ -214,9 +209,9 @@ class Repeat(object):
         else:
             self.tick = self.pb_tick
 
-        self.global_stats = np.zeros([N_GLOBAL_STATS, SIGNIFICANT_RANGE[1]])
+        self.global_stats = np.zeros([N_GLOBAL_STATS, self.significant_range[1]])
         # Run simulation
-        self.tick(SIGNIFICANT_RANGE[1])
+        self.tick(self.significant_range[1])
         self.fitness = self.calculate_fitness()
 
     def init_particles_state(self):
@@ -321,12 +316,11 @@ class Repeat(object):
         plt.close()
 
     def calculate_fitness(self):
-        numerator = self.global_stats[self.which_order_param[0],
-                          SIGNIFICANT_RANGE[0]:SIGNIFICANT_RANGE[1]]
-        denominator = self.global_stats[self.which_order_param[1],
-                          SIGNIFICANT_RANGE[0]:SIGNIFICANT_RANGE[1]]
-        data_segment = numerator / denominator
-        return np.mean(data_segment)
+        numerator = np.mean(self.global_stats[self.which_order_param[0],
+                          self.significant_range[0]:self.significant_range[1]])
+        denominator = np.mean(self.global_stats[self.which_order_param[1],
+                          self.significant_range[0]:self.significant_range[1]])
+        return numerator / denominator
 
     def save(self, name):
         data = {
