@@ -1,13 +1,14 @@
 """
- - Using max fitness rather than mean fitness across different repeats
- - Also try more number of restarts -> 5
- - Average over longer period of time within each simulation [250, 1000]
- - For each repeat, Fitness = Mean - Std
+ - Using mean fitness across different repeats
+ - Average over [1500, 2000] steps
+ - For each repeat, Fitness = angular momentum / pw distance
+    - First average across time, then divide
+ - change import statement dependency on 'E1'
+ - delete parameter.py (redundant)
 """
 
 # --------- Differential evolution parameters ---------
 STARTING_REP_ID = 0
-TRIAL_NAME = "E1"  # no space <<<
 WHICH_ORDER_PARAM = [0,6] # 0: angular momentum, 1: alignment, 2: clustering,
 # 3: CM_x, 4: CM_y, 5: radial distance (CF), 6: pw distance, 7: nn distance,
 # 8: group migration, 9: radial distance (CM)
@@ -18,12 +19,12 @@ PERIODIC_BOUNDARY = True
 
 DENSITIES = []  # the set of densities to run experiments with; empty -> var
 
-NUM_GENERATION = 2 #100000
+NUM_GENERATION = 1000
 POPULATION_SIZE = 100
 SCALING_PARAM = 0.3  # usually from (0,2] best 0.3
 CROSSOVER_RATE = 0.8  # usually from (0,1) best 0.8
 NUM_REPEATS = 5  # number of repeated runs for the same gene
-SIGNIFICANT_RANGE = [250, 1000]  # range of steps to average over the fitness
+SIGNIFICANT_RANGE = [1500, 2000]  # range of steps to average over the fitness
 
 MAX_OR_MIN = "MAX"  # choose from {"MAX", "MIN"}
 
@@ -36,14 +37,14 @@ PARAM_LIMITS = {
     "Angular Inertia": [0.0, 5.0],
     "Alignment Force": [0.0, 5.0],
     "Gradient Direction": [0.0, 2.0],
-    "Alignment Range": [2.0, 30.0],
+    "Alignment Range": [2.000000001, 30.0],
     # -1 maps to beta=0 (strongest repulsion)
     # and 1 maps to beta=+inf (strongest attraction)
     "Adhesion": [-1., 1.],
     "Interaction Force": [0.0, 5.0],
     "Noise Intensity": [0.0, 1.0],
     "Velocity": [0.005, 0.2],
-    "Interaction Range": [2.0, 30.0]
+    "Interaction Range": [2.000000001, 30.0]
 }
 
 # --------- General model parameters ---------
