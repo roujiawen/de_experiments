@@ -144,7 +144,7 @@ class Model(object):
         scale_factor = self.repeats[0].scale_factor
         colors = ["blue", "red", "green"]
         figsize = (3.3*(self.num_repeats-1)+3, 3.53)
-        dpi = 50 #100
+        dpi = 100
         plt.figure(figsize=figsize, dpi=dpi)
         for subplot_id, rep in enumerate(self.repeats):
             # Prepare for making plots
@@ -316,11 +316,13 @@ class Repeat(object):
         plt.close()
 
     def calculate_fitness(self):
-        numerator = np.mean(self.global_stats[self.which_order_param[0],
-                          self.significant_range[0]:self.significant_range[1]])
-        denominator = np.mean(self.global_stats[self.which_order_param[1],
-                          self.significant_range[0]:self.significant_range[1]])
-        return numerator / denominator
+        # numerator = np.mean(self.global_stats[self.which_order_param[0],
+        #                   self.significant_range[0]:self.significant_range[1]])
+        # denominator = np.mean(self.global_stats[self.which_order_param[1],
+        #                   self.significant_range[0]:self.significant_range[1]])
+        data_segment = self.global_stats[self.which_order_param,
+                          self.significant_range[0]:self.significant_range[1]]
+        return np.mean(data_segment)
 
     def save(self, name):
         data = {

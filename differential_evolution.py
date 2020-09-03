@@ -58,8 +58,12 @@ def check_boundary(candidate):
             gene[each] = candidate[each]
     return gene
 
+def log_progress(text):
+    with open(OUT_PATH+"progress.log", "w") as outfile:
+        outfile.write(text)
 
 def evolve():
+    log_progress("Initializing...")
     # Initialize population
     population = []
     models = []
@@ -81,8 +85,10 @@ def evolve():
         model.save(OUT_PATH+"Gen0_{}".format(indiv_id))
         population.append(model)
 
+
     # Evolve
     for gen_id in range(1, NUM_GENERATION+1):
+        log_progress("Evolving Generation #{}...".format(gen_id))
         models = []
         repeats = []
         for indiv_id in range(POPULATION_SIZE):
@@ -155,4 +161,4 @@ if __name__ == "__main__":
             if not os.path.exists(OUT_PATH):
                 os.makedirs(OUT_PATH)
             evolve()
-    print("total run time: {}".format(time.time()-start_time))
+    log_progress("Done! Total time: {}".format(time.time()-start_time))
