@@ -128,12 +128,10 @@ def evolve():
                 # Calculate distance between trial and base
                 dist_from_base = calc_dist(trial, base)
                 num_attempts += 1
-                print num_attempts, dist_from_base
 
             if dist_from_base < CC_THRESHOLD:
-                # No new trial ind
-                # Give dummy trial ind
-                pass
+                # No new trial vector, give dummy trial vector
+                trial = None
 
             model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
             models.append(model)
@@ -151,11 +149,11 @@ def evolve():
             model = models[indiv_id]
             # Selection
             if MAX_OR_MIN=="MAX":
-                if model.fitness >= population[indiv_id].fitness:
+                if model.fitness and model.fitness >= population[indiv_id].fitness:
                     population[indiv_id] = model
                     model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
             else:
-                if model.fitness <= population[indiv_id].fitness:
+                if model.fitness and model.fitness <= population[indiv_id].fitness:
                     population[indiv_id] = model
                     model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
 

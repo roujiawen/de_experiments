@@ -123,7 +123,10 @@ class Model(object):
 
     @property
     def fitness(self):
-        return np.mean([_.fitness for _ in self.repeats])
+        if self.gene:
+            return np.mean([_.fitness for _ in self.repeats])
+        else:
+            return None
 
     def save(self, name):
         best_repeat = np.argmax([_.fitness for _ in self.repeats])
@@ -195,6 +198,9 @@ class Repeat(object):
         self.significant_range = significant_range
 
     def init(self):
+        if not self.gene: # If dummy gene
+            return
+
         general_params = self.general_params
         gene = self.gene
         self.user_params = gene2params(gene)
