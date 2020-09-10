@@ -30,6 +30,6 @@ copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 def model_wrapper(group):
     """Wrapper function for Model.
     """
-    repeat, _ = group
+    indiv_id, rep_id, repeat = group
     repeat.init()
     return group

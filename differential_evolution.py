@@ -2,6 +2,7 @@ import os
 import random
 import json
 from copy import deepcopy
+from operator import add
 
 import numpy as np
 from model import Model
@@ -23,6 +24,7 @@ POPULATION_SIZE = getattr(exper_config, "POPULATION_SIZE")
 NUM_GENERATION = getattr(exper_config, "NUM_GENERATION")
 SCALING_PARAM = getattr(exper_config, "SCALING_PARAM")
 CROSSOVER_RATE = getattr(exper_config, "CROSSOVER_RATE")
+CC_THRESHOLD = getattr(exper_config, "CC_THRESHOLD")
 DENSITIES = getattr(exper_config, "DENSITIES")
 MAX_OR_MIN = getattr(exper_config, "MAX_OR_MIN")
 NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
@@ -44,7 +46,6 @@ def random_gene():
         gene[each] = randomize(each)
     return gene
 
-
 def check_boundary(candidate):
     """If a parameter exceeds feasible range, use a random value from the
     feasible range instead."""
@@ -57,6 +58,12 @@ def check_boundary(candidate):
         else:
             gene[each] = candidate[each]
     return gene
+
+def calc_dist(gene1, gene2):
+    squares = [((gene1[param] - gene2[param]) / (upper - lower)) ** 2
+               for param, [lower, upper] in PARAM_LIMITS.items()
+               if upper - lower != 0]
+    return np.sqrt(np.sum(squares))
 
 def log_progress(text):
     with open(OUT_PATH+"progress.log", "w") as outfile:
@@ -74,17 +81,19 @@ def evolve():
         model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
         models.append(model)
 
-    for rep_id in range(NUM_REPEATS):
-        repeats = [_.repeats[rep_id] for _ in models]
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            for repeat, indiv_id in executor.map(model_wrapper, zip(repeats, range(POPULATION_SIZE))):
-                models[indiv_id].repeats[rep_id] = repeat
+    all_repeats = reduce(add, [zip([i]*NUM_REPEATS, # indiv_id
+                                   range(NUM_REPEATS), # rep_id
+                                   m.repeats # Repeat object
+                                   ) for i, m in enumerate(models)])
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for indiv_id, rep_id, repeat in executor.map(model_wrapper, all_repeats):
+            models[indiv_id].repeats[rep_id] = repeat
 
     for indiv_id in range(POPULATION_SIZE):
         model = models[indiv_id]
         model.save(OUT_PATH+"Gen0_{}".format(indiv_id))
         population.append(model)
-
 
     # Evolve
     for gen_id in range(1, NUM_GENERATION+1):
@@ -93,31 +102,50 @@ def evolve():
         repeats = []
         for indiv_id in range(POPULATION_SIZE):
             this_gene = population[indiv_id].gene
-            # Mutate
-            base, dif1, dif2 = np.random.choice(
-                [m.gene for m in population if m.gene != this_gene], 3)
-            variant = {
-                each_param: base[each_param]
-                + SCALING_PARAM * (dif1[each_param] - dif2[each_param])
-                for each_param in this_gene
-            }
-            variant = check_boundary(variant)
-            # Crossover
-            i_rand = np.random.randint(len(this_gene))
-            trial = {
-                each_param: variant[each_param]
-                if (np.random.random() <= CROSSOVER_RATE) or (j == i_rand)
-                else this_gene[each_param]
-                for j, each_param in enumerate(this_gene)
-            }
+            # Convergence control strategy (ref: 10.1109/CEC.2012.6252891)
+            dist_from_base = 0
+            num_attempts = 0
+            while dist_from_base < CC_THRESHOLD and num_attempts < 5:
+                # Mutate
+                base, dif1, dif2 = np.random.choice(
+                    [m.gene for m in population if m.gene != this_gene],
+                    size=3,
+                    replace=False)
+                variant = {
+                    each_param: base[each_param]
+                    + SCALING_PARAM * (dif1[each_param] - dif2[each_param])
+                    for each_param in this_gene
+                }
+                variant = check_boundary(variant)
+                # Crossover
+                i_rand = np.random.randint(len(this_gene))
+                trial = {
+                    each_param: variant[each_param]
+                    if (np.random.random() <= CROSSOVER_RATE) or (j == i_rand)
+                    else this_gene[each_param]
+                    for j, each_param in enumerate(this_gene)
+                }
+                # Calculate distance between trial and base
+                dist_from_base = calc_dist(trial, base)
+                num_attempts += 1
+                print num_attempts, dist_from_base
+
+            if dist_from_base < CC_THRESHOLD:
+                # No new trial ind
+                # Give dummy trial ind
+                pass
+
             model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
             models.append(model)
 
-        for rep_id in range(NUM_REPEATS):
-            repeats = [_.repeats[rep_id] for _ in models]
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                for repeat, indiv_id in executor.map(model_wrapper, zip(repeats, range(POPULATION_SIZE))):
-                    models[indiv_id].repeats[rep_id] = repeat
+        all_repeats = reduce(add, [zip([i]*NUM_REPEATS, # indiv_id
+                                       range(NUM_REPEATS), # rep_id
+                                       m.repeats # Repeat object
+                                       ) for i, m in enumerate(models)])
+
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            for indiv_id, rep_id, repeat in executor.map(model_wrapper, all_repeats):
+                models[indiv_id].repeats[rep_id] = repeat
 
         for indiv_id in range(POPULATION_SIZE):
             model = models[indiv_id]
