@@ -1,5 +1,5 @@
 """
-Same as E3, just want to repeat the experiment
+Same as E3, just want to repeat the experiment. Only 200 generations.
 """
 
 # --------- Differential evolution parameters ---------
