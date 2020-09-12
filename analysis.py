@@ -4,7 +4,7 @@ def get_existing_folders(exper):
     """
     e.g.
     Input: E3
-    Output: [E3_spring, E3_broome, E3_mercer]
+    Output: [output/E3_spring, output/E3_broome, output/E3_mercer]
     """
     import os
     all_names = ["output/" + exper + "_" + cluster for cluster in CLUSTERS]
@@ -113,11 +113,14 @@ def plot_multiple_fitness_trajectories(list_of_expers):
     import shutil
     import matplotlib.pyplot as plt
     from importlib import import_module
+    import numpy as np
 
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
     # Create new plot
     plt.figure()
 
     for exper in list_of_expers:
+        color = colors.pop(0)
         # Read number of generations from experiment config file
         exper_config = import_module("output.{}".format(exper))
         NUM_GENERATION = getattr(exper_config, "NUM_GENERATION")
@@ -128,24 +131,31 @@ def plot_multiple_fitness_trajectories(list_of_expers):
             gen_ind_set = set(get_gen_ind_pairs(folder))
 
             # Calculate fitness trajectory
-            fitness_trajectory = []
+            means = []
+            stds = []
             individuals = []
             # Generation 0
             for ind in range(POPULATION_SIZE):
                 individuals.append(get_fitness(folder, 0, ind))
-            fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
+            means.append(np.mean(individuals))
+            stds.append(np.std(individuals))
             # Generation 1, 2,... N
-            for gen in range(NUM_GENERATION):
+            for gen in range(1, NUM_GENERATION+1):
                 for ind in range(POPULATION_SIZE):
                     if (gen, ind) in gen_ind_set:
                         individuals[ind] = get_fitness(folder, gen, ind)
-                fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
-            plt.plot(range(0, NUM_GENERATION+1), fitness_trajectory)
+                means.append(np.mean(individuals))
+                stds.append(np.std(individuals))
+
+            means, stds = np.array(means), np.array(stds)
+            plt.plot(range(0, NUM_GENERATION+1), means, label=folder.split("/")[1], color=color)
+            plt.fill_between(range(0, NUM_GENERATION+1), means+stds, means-stds, facecolor=color, alpha=0.2)
 
     plt.xlabel("Generations")
     plt.ylabel("Angular Momentum")
     plt.ylim(0, 1)
     plt.title("Population fitness evolution trajectories")
+    plt.legend()
 
     # Create new destination folder
     dst_folder = "output/fitness_trajectories_{}".format("_".join(sorted(list_of_expers)))
@@ -205,13 +215,19 @@ def plot_fitness_trajectory(arg):
     else:
         plot_single_fitness_trajectory(arg)
 
+# # Analysis 1
+# separate_last_generation("E4-1")
+# # Analysis 2
+# separate_high_fitness("E4-1")
+# # Analysis 3
+# plot_fitness_trajectory("E4-1")
 
 # # Analysis 1
-# separate_last_generation("E3-2")
+# separate_last_generation("E4-2")
 # # Analysis 2
-# separate_high_fitness("E3-2")
+# separate_high_fitness("E4-2")
 # # Analysis 3
-# plot_fitness_trajectory("E3-2")
+# plot_fitness_trajectory("E4-2")
 
 # Analysis 4
-plot_fitness_trajectory(["E3-2", "E3-1", "E3"])
+plot_fitness_trajectory(["E4-1", "E4-2", "E3"])
