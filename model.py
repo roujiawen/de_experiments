@@ -134,7 +134,7 @@ class Model(object):
             "gene": self.gene,
             "general_params": self.general_params,
             "fitness": self.fitness,
-            "global_stats": self.repeats[best_repeat].global_stats.tolist()
+            "global_stats": self.repeats[best_repeat].global_stats[self.which_order_param, :].tolist()
         }
         with open("{}.json".format(name), "w") as outfile:
             json.dump(data, outfile)
