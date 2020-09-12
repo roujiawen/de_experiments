@@ -24,9 +24,9 @@ POPULATION_SIZE = getattr(exper_config, "POPULATION_SIZE")
 NUM_GENERATION = getattr(exper_config, "NUM_GENERATION")
 SCALING_PARAM = getattr(exper_config, "SCALING_PARAM")
 CROSSOVER_RATE = getattr(exper_config, "CROSSOVER_RATE")
-SPACE_DIAGONAL = getattr(exper_config, "SPACE_DIAGONAL")
-INITIAL_THRESHOLD = getattr(exper_config, "INITIAL_THRESHOLD")
-DECAY_RATE = getattr(exper_config, "DECAY_RATE")
+# SPACE_DIAGONAL = getattr(exper_config, "SPACE_DIAGONAL")
+# INITIAL_THRESHOLD = getattr(exper_config, "INITIAL_THRESHOLD")
+# DECAY_RATE = getattr(exper_config, "DECAY_RATE")
 DENSITIES = getattr(exper_config, "DENSITIES")
 MAX_OR_MIN = getattr(exper_config, "MAX_OR_MIN")
 NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
@@ -99,19 +99,21 @@ def evolve():
     # Evolve
     for gen_id in range(1, NUM_GENERATION+1):
         log_progress("Evolving Generation #{}...".format(gen_id))
-        # Calculate cc_threshold (ref: Eq. 3)
-        cc_threshold = INITIAL_THRESHOLD * SPACE_DIAGONAL * (
-            (NUM_GENERATION - gen_id) / float(NUM_GENERATION)
-        ) ** DECAY_RATE
+
+        # # Calculate cc_threshold (ref: Eq. 3)
+        # cc_threshold = INITIAL_THRESHOLD * SPACE_DIAGONAL * (
+        #     (NUM_GENERATION - gen_id) / float(NUM_GENERATION)
+        # ) ** DECAY_RATE
 
         models = []
         repeats = []
         for indiv_id in range(POPULATION_SIZE):
             this_gene = population[indiv_id].gene
-            # Convergence control strategy (ref: 10.1109/CEC.2012.6252891)
-            dist_from_base = float("-inf")
-            num_attempts = 0
-            while dist_from_base < cc_threshold and num_attempts < 5:
+            # # Convergence control strategy (ref: 10.1109/CEC.2012.6252891)
+            # dist_from_base = float("-inf")
+            # num_attempts = 0
+            # while dist_from_base < cc_threshold and num_attempts < 5:
+            if True:
                 # Mutate
                 base, dif1, dif2 = np.random.choice(
                     [m.gene for m in population if m.gene != this_gene],
@@ -131,14 +133,14 @@ def evolve():
                     else this_gene[each_param]
                     for j, each_param in enumerate(this_gene)
                 }
-                # Calculate distance between trial and base
-                dist_from_base = calc_dist(trial, base)
-                num_attempts += 1
+                # # Calculate distance between trial and base
+                # dist_from_base = calc_dist(trial, base)
+                # num_attempts += 1
 
-            if dist_from_base < cc_threshold:
-                # No new trial vector, give dummy trial vector
-                trial = None
-                
+            # if dist_from_base < cc_threshold:
+            #     # No new trial vector, give dummy trial vector
+            #     trial = None
+
             model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
             models.append(model)
 
