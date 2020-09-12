@@ -147,7 +147,7 @@ class Model(object):
         scale_factor = self.repeats[0].scale_factor
         colors = ["blue", "red", "green"]
         figsize = (3.3*(self.num_repeats-1)+3, 3.53)
-        dpi = 100
+        dpi = 60 #100
         plt.figure(figsize=figsize, dpi=dpi)
         for subplot_id, rep in enumerate(self.repeats):
             # Prepare for making plots
