@@ -30,6 +30,7 @@ CROSSOVER_RATE = getattr(exper_config, "CROSSOVER_RATE")
 DENSITIES = getattr(exper_config, "DENSITIES")
 MAX_OR_MIN = getattr(exper_config, "MAX_OR_MIN")
 FITNESS_AGGREGATE = getattr(exper_config, "FITNESS_AGGREGATE")
+DE_STRATEGY = getattr(exper_config, "DE_STRATEGY")
 NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
 STARTING_REP_ID = getattr(exper_config, "STARTING_REP_ID")
 
@@ -71,6 +72,15 @@ def log_progress(text):
     with open(OUT_PATH+"progress.log", "w") as outfile:
         outfile.write(text)
 
+def get_best_gene_from_last_gen(population):
+    current_best_m = population[0]
+    current_best_fitness = population[0].fitness
+    for m in population[1:]:
+        if m.fitness > current_best_fitness:
+            current_best_m = m
+            current_best_fitness = m.fitness
+    return current_best_m.gene
+
 def evolve():
     log_progress("Initializing...")
     # Initialize population
@@ -108,6 +118,10 @@ def evolve():
 
         models = []
         repeats = []
+
+        if DE_STRATEGY=="best1bin":
+            base = get_best_gene_from_last_gen(population)
+
         for indiv_id in range(POPULATION_SIZE):
             this_gene = population[indiv_id].gene
             # # Convergence control strategy (ref: 10.1109/CEC.2012.6252891)
@@ -116,10 +130,19 @@ def evolve():
             # while dist_from_base < cc_threshold and num_attempts < 5:
             if True:
                 # Mutate
-                base, dif1, dif2 = np.random.choice(
-                    [m.gene for m in population if m.gene != this_gene],
-                    size=3,
-                    replace=False)
+                if DE_STRATEGY=="best1bin":
+                    dif1, dif2 = np.random.choice(
+                        [m.gene for m in population if m.gene != this_gene and m.gene != base],
+                        size=2,
+                        replace=False)
+                elif DE_STRATEGY=="rand1bin":
+                    base, dif1, dif2 = np.random.choice(
+                        [m.gene for m in population if m.gene != this_gene],
+                        size=3,
+                        replace=False)
+                else:
+                    raise ValueError
+
                 variant = {
                     each_param: base[each_param]
                     + SCALING_PARAM * (dif1[each_param] - dif2[each_param])

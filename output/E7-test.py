@@ -25,6 +25,7 @@ SIGNIFICANT_RANGE = [1500, 2000]  # range of steps to average over the fitness
 
 MAX_OR_MIN = "MAX"  # choose from {"MAX", "MIN"}
 FITNESS_AGGREGATE = "mean_fitness" # choose from {"max_fitness", "mean_fitness"}
+DE_STRATEGY = "rand1bin"
 
 
 # --------- Feasible model parameter ranges in evolution ---------
