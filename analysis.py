@@ -300,9 +300,17 @@ def make_hypersearch_table(list_of_expers, outfile):
     df.to_csv("./hypersearch_analysis_{}.csv".format(outfile))
 
 
-E5s = map(lambda x: "E5-"+str(x), range(12))
-E5s.append("E4-1")
-make_hypersearch_table(E5s, "E5")
+
+for each in ["E6-2", "E6-3"]:
+    separate_last_generation(each)
+    separate_high_fitness(each)
+    plot_fitness_trajectory(each)
+
+# -------------- ARCHIVE ----------------
+
+# E5s = map(lambda x: "E5-"+str(x), range(12))
+# E5s.append("E4-1")
+# make_hypersearch_table(E5s, "E5")
 
 # -------------- ARCHIVE ----------------
 
