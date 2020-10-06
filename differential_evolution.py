@@ -29,6 +29,7 @@ CROSSOVER_RATE = getattr(exper_config, "CROSSOVER_RATE")
 # DECAY_RATE = getattr(exper_config, "DECAY_RATE")
 DENSITIES = getattr(exper_config, "DENSITIES")
 MAX_OR_MIN = getattr(exper_config, "MAX_OR_MIN")
+FITNESS_AGGREGATE = getattr(exper_config, "FITNESS_AGGREGATE")
 NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
 STARTING_REP_ID = getattr(exper_config, "STARTING_REP_ID")
 
@@ -79,7 +80,7 @@ def evolve():
     # Random genes for initial population
     for indiv_id in range(POPULATION_SIZE):
         gene = random_gene()
-        model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
+        model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS, FITNESS_AGGREGATE)
         models.append(model)
 
     all_repeats = reduce(add, [zip([i]*NUM_REPEATS, # indiv_id
@@ -141,7 +142,7 @@ def evolve():
             #     # No new trial vector, give dummy trial vector
             #     trial = None
 
-            model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS)
+            model = Model(trial, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS, FITNESS_AGGREGATE)
             models.append(model)
 
         all_repeats = reduce(add, [zip([i]*NUM_REPEATS, # indiv_id

@@ -112,10 +112,11 @@ def gen_internal_params(uprm, general_params):
     return internal_params
 
 class Model(object):
-    def __init__(self, gene, significant_range, which_order_param, general_params, num_repeats):
+    def __init__(self, gene, significant_range, which_order_param, general_params, num_repeats, fitness_aggregate):
         self.which_order_param = which_order_param
         self.num_repeats = num_repeats
         self.general_params = general_params
+        self.fitness_aggregate = fitness_aggregate
         self.repeats = [Repeat(gene,
             np.random.RandomState((_+int(time.time()*1e6)) % 4294967296),
             which_order_param, general_params, significant_range) for _ in range(num_repeats)]
@@ -124,7 +125,12 @@ class Model(object):
     @property
     def fitness(self):
         if self.gene:
-            return np.mean([_.fitness for _ in self.repeats])
+            if self.fitness_aggregate == "max_fitness":
+                return np.max([_.fitness for _ in self.repeats])
+            elif self.fitness_aggregate == "mean_fitness":
+                return np.mean([_.fitness for _ in self.repeats])
+            else:
+                raise ValueError
         else:
             return None
 
