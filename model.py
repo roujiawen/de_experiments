@@ -7,12 +7,12 @@ import numpy as np
 
 # set matplotlib backend
 import matplotlib
-from sys import platform
-if platform == "darwin":
-
-    matplotlib.use('TkAgg')
-else:
-    matplotlib.use('agg')
+# from sys import platform
+# if platform == "darwin":
+#     matplotlib.use('TkAgg')
+# else:
+#     matplotlib.use('agg')
+matplotlib.use('agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -126,24 +126,33 @@ class Model(object):
     def fitness(self):
         if self.gene:
             if self.fitness_aggregate == "max_fitness":
-                return np.max([_.fitness for _ in self.repeats])
+                index = np.argmax([_.fitness[0] for _ in self.repeats])
+                return self.repeats[index].fitness
             elif self.fitness_aggregate == "mean_fitness":
-                return np.mean([_.fitness for _ in self.repeats])
+                return tuple(np.mean([_.fitness for _ in self.repeats], axis=0))
             else:
                 raise ValueError
         else:
             return None
 
     def save(self, name):
-        best_repeat = np.argmax([_.fitness for _ in self.repeats])
+        best_repeat = np.argmax([_.fitness[0] for _ in self.repeats])
+
+        if self.which_order_param in ["0+1", "0-1"]:
+            order_params = [0, 1]
+        else:
+            order_params = self.which_order_param
+
         data = {
             "gene": self.gene,
             "general_params": self.general_params,
             "fitness": self.fitness,
-            "global_stats": self.repeats[best_repeat].global_stats[self.which_order_param, :].tolist()
+            "global_stats": self.repeats[best_repeat].global_stats[order_params, :].tolist()
         }
+
         with open("{}.json".format(name), "w") as outfile:
             json.dump(data, outfile)
+
         self.plot(save=name)
 
     def plot(self, save=None):
@@ -182,11 +191,11 @@ class Model(object):
             plt.xlim([0, adjusted_limit])
             plt.ylim([0, adjusted_limit])
             plt.axis("off")
-            plt.title("fitness={}".format(round(rep.fitness, 4)))
+            plt.title("fit={}".format(tuple(round(x, 4) for x in rep.fitness) if len(rep.fitness) > 1 else round(rep.fitness[0], 4)))
 
 
         plt.subplots_adjust(left=0, bottom=0, right=1, top=0.85, hspace=0, wspace=0.1)
-        plt.suptitle("overal fitness={}".format(round(self.fitness, 4)))
+        plt.suptitle("overal fit={}".format(tuple(round(x, 4) for x in self.fitness) if len(self.fitness) > 1 else round(self.fitness[0], 4)))
 
         if save is None:
             plt.show()
@@ -319,7 +328,7 @@ class Repeat(object):
         plt.ylim([0, adjusted_limit])
 
         plt.subplots_adjust(left=0, bottom=0, right=1, top=0.95)
-        plt.title("fitness={}".format(round(self.fitness, 4)))
+        plt.title("fit={}".format(tuple(round(x, 4) for x in self.fitness) if len(self.fitness) > 1 else round(self.fitness[0], 4)))
         plt.axis("off")
         if save is None:
             plt.show()
@@ -332,9 +341,23 @@ class Repeat(object):
         #                   self.significant_range[0]:self.significant_range[1]])
         # denominator = np.mean(self.global_stats[self.which_order_param[1],
         #                   self.significant_range[0]:self.significant_range[1]])
-        data_segment = self.global_stats[self.which_order_param,
-                          self.significant_range[0]:self.significant_range[1]]
-        return np.mean(data_segment)
+        sig_range = self.significant_range
+        wop = self.which_order_param
+        global_stats = self.global_stats
+
+        if wop == "0-1":
+            ang_mom = np.mean(global_stats[0, sig_range[0]:sig_range[1]])
+            align = np.mean(global_stats[1, sig_range[0]:sig_range[1]])
+            fitness = ang_mom - align
+            return (fitness, ang_mom, align)
+        elif wop == "0+1":
+            ang_mom = np.mean(global_stats[0, sig_range[0]:sig_range[1]])
+            align = np.mean(global_stats[1, sig_range[0]:sig_range[1]])
+            fitness = ang_mom + align
+            return (fitness, ang_mom, align)
+
+        fitness = np.mean(global_stats[wop, sig_range[0]:sig_range[1]])
+        return (fitness,)
 
     def save(self, name):
         data = {
