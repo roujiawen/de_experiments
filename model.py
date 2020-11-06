@@ -113,6 +113,7 @@ def gen_internal_params(uprm, general_params):
 
 class Model(object):
     def __init__(self, gene, significant_range, which_order_param, general_params, num_repeats, fitness_aggregate):
+        self.significant_range = significant_range
         self.which_order_param = which_order_param
         self.num_repeats = num_repeats
         self.general_params = general_params
@@ -138,16 +139,20 @@ class Model(object):
     def save(self, name):
         best_repeat = np.argmax([_.fitness[0] for _ in self.repeats])
 
-        if self.which_order_param in ["0+1", "0-1"]:
-            order_params = [0, 1]
-        else:
-            order_params = self.which_order_param
+        # if self.which_order_param in ["0+1", "0-1"]:
+        #     order_params = [0, 1]
+        # else:
+        #     order_params = self.which_order_param
+
+        global_stats = self.repeats[best_repeat].global_stats
+        sig_range = self.significant_range
 
         data = {
             "gene": self.gene,
             "general_params": self.general_params,
             "fitness": self.fitness,
-            "global_stats": self.repeats[best_repeat].global_stats[order_params, :].tolist()
+            "global_stats": [np.mean(global_stats[i, sig_range[0]:sig_range[1]]) for i in range(len(global_stats))]
+            #self.repeats[best_repeat].global_stats[order_params, :].tolist()
         }
 
         with open("{}.json".format(name), "w") as outfile:
@@ -157,12 +162,12 @@ class Model(object):
 
     def plot(self, save=None):
         # smaller file size
-        alpha = 1 #0.5
+        alpha = 0.5 #1
         velocity_trace = 0.3
         scale_factor = self.repeats[0].scale_factor
         colors = ["blue", "red", "green"]
         figsize = (3.3*(self.num_repeats-1)+3, 3.53)
-        dpi = 60 #100
+        dpi = 100 #60
         plt.figure(figsize=figsize, dpi=dpi)
         for subplot_id, rep in enumerate(self.repeats):
             # Prepare for making plots
@@ -191,11 +196,11 @@ class Model(object):
             plt.xlim([0, adjusted_limit])
             plt.ylim([0, adjusted_limit])
             plt.axis("off")
-            plt.title("fit={}".format(tuple(round(x, 4) for x in rep.fitness) if len(rep.fitness) > 1 else round(rep.fitness[0], 4)))
+            plt.title("fitness={}".format(tuple(round(x, 4) for x in rep.fitness) if len(rep.fitness) > 1 else round(rep.fitness[0], 4)))
 
 
         plt.subplots_adjust(left=0, bottom=0, right=1, top=0.85, hspace=0, wspace=0.1)
-        plt.suptitle("overal fit={}".format(tuple(round(x, 4) for x in self.fitness) if len(self.fitness) > 1 else round(self.fitness[0], 4)))
+        plt.suptitle("overall fitness={}".format(tuple(round(x, 4) for x in self.fitness) if len(self.fitness) > 1 else round(self.fitness[0], 4)))
 
         if save is None:
             plt.show()
