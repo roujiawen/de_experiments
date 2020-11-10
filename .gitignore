@@ -2,7 +2,11 @@
 *.so
 *.pyc
 *.ipynb
+*.pdf
+*.csv
 c_code.cpp
 venv/
 output/*
 !output/*.py
+paper_plots/output_plots
+paper_plots/scatter_samples
