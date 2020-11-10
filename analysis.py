@@ -4,10 +4,12 @@ def get_existing_folders(exper):
     """
     e.g.
     Input: E3
-    Output: [output/E3_spring, output/E3_broome, output/E3_mercer]
+    Output: [/Users/work/de_exper/output/E3_spring,
+        /Users/work/de_exper/output/E3_broome,
+        /Users/work/de_exper/output/E3_mercer]
     """
     import os
-    all_names = ["output/" + exper + "_" + cluster for cluster in CLUSTERS]
+    all_names = ["/Users/work/de_exper/output/" + exper + "_" + cluster for cluster in CLUSTERS]
     return filter(os.path.isdir, all_names)
 
 def get_gen_ind_pairs(folder):
@@ -49,7 +51,8 @@ def get_fitness(folder, gen, ind):
     ind_data = read_ind_data(folder, gen, ind)
     return ind_data["fitness"]
 
-def separate_last_generation(exper):
+
+def separate_generation_n(exper, input_gen, subfolder=None):
     """
     e.g. Input: E3
     """
@@ -57,9 +60,13 @@ def separate_last_generation(exper):
     from collections import defaultdict
     import shutil
 
+    if subfolder is None:
+        subfolder = "gen_{}".format(input_gen)
+
     folders = get_existing_folders(exper)
     for folder in folders:
         gen_ind_pairs = get_gen_ind_pairs(folder)
+        gen_ind_pairs = filter(lambda gen_ind: gen_ind[0]<=input_gen, gen_ind_pairs)
 
         # Get last generation of every individual
         last_gens = defaultdict(lambda: 0)
@@ -67,12 +74,15 @@ def separate_last_generation(exper):
             last_gens[ind] = max(last_gens[ind], gen)
 
         # Create new destination folder
-        dst_folder = folder+"/last_gens"
+        dst_folder = folder+"/"+subfolder
         overwrite_create(dst_folder)
 
         # Copy last generations into destination folder
-        for ind in range(max(last_gens.keys())):
+        for ind in range(len(last_gens)):
             shutil.copy(folder+"/Gen{}_{}.png".format(last_gens[ind], ind), dst_folder)
+
+def separate_last_generation(exper):
+    return separate_generation_n(exper, float("inf"), "last_gens")
 
 def separate_high_fitness(exper, top_n=50):
     """
@@ -107,19 +117,36 @@ def separate_high_fitness(exper, top_n=50):
             shutil.copy(folder+"/Gen{}_{}.png".format(gen, ind),
                         dst_folder+"/{}_Gen{}_{}.png".format(str(rank).zfill(2), gen, ind))
 
-def plot_multiple_fitness_trajectories(list_of_expers):
+def plot_multiple_fitness_trajectories(list_of_expers, color_by="exper", stats="max"):
+    """
+    color_by = {"exper", "single", "two_exper"}
+    stats = {"max", "mean", "std"}
+    """
+
     import shutil
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import cm
     from importlib import import_module
     import numpy as np
 
-    colors=iter(cm.rainbow(np.linspace(0,1,len(list_of_expers))))
+    if color_by == "single":
+        colors=iter(cm.rainbow(np.linspace(0,1,len(list_of_expers)*len(CLUSTERS))))
+    elif color_by == "exper":
+        colors=iter(cm.rainbow(np.linspace(0,1,len(list_of_expers))))
+    elif color_by == "two_exper":
+        colors=iter(cm.rainbow(np.linspace(0,1,len(list_of_expers)/2)))
+    else:
+        raise ValueError
+
     # Create new plot
     plt.figure(figsize=(15,15), dpi=100)
 
-    for exper in list_of_expers:
-        color = next(colors)
+    for id_exper, exper in enumerate(list_of_expers):
+        if color_by == "exper":
+            color = next(colors)
+        elif color_by == "two_exper":
+            if id_exper % 2 == 0:
+                color = next(colors)
         # Read number of generations from experiment config file
         exper_config = import_module("output.{}".format(exper))
         NUM_GENERATION = getattr(exper_config, "NUM_GENERATION")
@@ -127,6 +154,8 @@ def plot_multiple_fitness_trajectories(list_of_expers):
 
         folders = get_existing_folders(exper)
         for folder in folders:
+            if color_by == "single":
+                color = next(colors)
             gen_ind_set = set(get_gen_ind_pairs(folder))
 
             # Calculate fitness trajectory
@@ -151,22 +180,31 @@ def plot_multiple_fitness_trajectories(list_of_expers):
 
             [means, stds, maxs] = map(np.array, [means, stds, maxs])
             # Plot
-            plt.plot(range(0, NUM_GENERATION+1), maxs, label=folder.split("/")[1], color=color)
-            # plt.fill_between(range(0, NUM_GENERATION+1), means+stds, means-stds, facecolor=color, alpha=0.2)
+            if stats == "max":
+                plt.plot(range(0, NUM_GENERATION+1), maxs, label=folder.split("/")[-1], color=color)
+            elif stats == "mean":
+                plt.plot(range(0, NUM_GENERATION+1), means, label=folder.split("/")[-1], color=color)
+            elif stats == "std":
+                plt.fill_between(range(0, NUM_GENERATION+1), means+stds, means-stds, facecolor=color, alpha=0.2)
+            else:
+                raise ValueError
 
     plt.xlabel("Generations")
     plt.ylabel("Angular Momentum")
     plt.ylim(0, 1)
-    plt.title("Population fitness evolution trajectories")
+    plt.title("Population {} fitness evolution trajectories".format("mean" if stats=="std" else stats))
     plt.legend()
 
     # Create new destination folder
     dst_folder = "output/fitness_trajectories_{}".format("_".join(sorted(list_of_expers)))
     overwrite_create(dst_folder)
     # Save plot
-    plt.savefig(dst_folder+"/fitness_trajectories.png")
+    plt.savefig(dst_folder+"/{}_fitness_trajectories_by_{}.png".format(stats, color_by))
 
-def plot_single_fitness_trajectory(exper):
+def plot_single_fitness_trajectory(exper, stats="max"):
+    """
+    stats = {"max", "mean"}
+    """
     import shutil
     import matplotlib.pyplot as plt
 
@@ -186,13 +224,23 @@ def plot_single_fitness_trajectory(exper):
         # Generation 0
         for ind in range(POPULATION_SIZE):
             individuals.append(get_fitness(folder, 0, ind))
-        fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
+        if stats == "mean":
+            fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
+        elif stats == "max":
+            fitness_trajectory.append(max(individuals))
+        else:
+            raise ValueError
         # Generation 1, 2,... N
         for gen in range(NUM_GENERATION):
             for ind in range(POPULATION_SIZE):
                 if (gen, ind) in gen_ind_set:
                     individuals[ind] = get_fitness(folder, gen, ind)
-            fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
+            if stats == "mean":
+                fitness_trajectory.append(sum(individuals) / POPULATION_SIZE)
+            elif stats == "max":
+                fitness_trajectory.append(max(individuals))
+            else:
+                raise ValueError
 
         # Create new destination folder
         dst_folder = folder+"/fitness_trajectory"
@@ -204,19 +252,26 @@ def plot_single_fitness_trajectory(exper):
         plt.xlabel("Generations")
         plt.ylabel("Angular Momentum")
         plt.ylim(0, 1)
-        plt.title("Population fitness evolution trajectory")
+        plt.title("Population {} fitness evolution trajectory".format(stats))
         # Save plot
-        plt.savefig(dst_folder+"/fitness_trajectory.png")
+        plt.savefig(dst_folder+"/{}_fitness_trajectory.png".format(stats))
 
-def plot_fitness_trajectory(arg):
+def plot_fitness_trajectory(arg, **kwargs):
     """
     e.g. Input: E3
          Input: [E3, E3-1, ...]
     """
     if isinstance(arg, list):
-        plot_multiple_fitness_trajectories(arg)
+        plot_multiple_fitness_trajectories(arg, **kwargs)
     else:
-        plot_single_fitness_trajectory(arg)
+        plot_single_fitness_trajectory(arg, **kwargs)
+
+def get_last_gen_pairs(folder):
+    import os
+    all_files = os.listdir(folder+"/last_gens")
+    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
+    gen_ind_pairs = map(lambda s: tuple(map(int, s[3:-4].split("_"))), all_pngs)
+    return gen_ind_pairs
 
 def make_hypersearch_table(list_of_expers, outfile):
     # Assuming PARAM_LIMITS doesn't change with the experiments
@@ -225,13 +280,6 @@ def make_hypersearch_table(list_of_expers, outfile):
     from importlib import import_module
     exper_config = import_module("output.{}".format(list_of_expers[0]))
     PARAM_LIMITS = getattr(exper_config, "PARAM_LIMITS")
-
-    def get_last_gen_pairs(folder):
-        import os
-        all_files = os.listdir(folder+"/last_gens")
-        all_pngs = filter(lambda s: s[-4:]==".png", all_files)
-        gen_ind_pairs = map(lambda s: tuple(map(int, s[3:-4].split("_"))), all_pngs)
-        return gen_ind_pairs
 
     def get_diversity(folder):
         """
@@ -257,6 +305,15 @@ def make_hypersearch_table(list_of_expers, outfile):
             for j in range(i+1, len(genes)):
                 total_pw_dist += calc_dist(genes[i], genes[j])
         return total_pw_dist
+
+    def get_param_std(folder, param):
+        gen_ind_pairs = get_last_gen_pairs(folder)
+        param_values = []
+        for gen, ind in gen_ind_pairs:
+            ind_data = read_ind_data(folder, gen, ind)
+            param_values.append(ind_data["gene"][param])
+
+        return np.std(param_values)
 
     def get_mean_std_fitness(folder):
         gen_ind_pairs = get_last_gen_pairs(folder)
@@ -286,25 +343,94 @@ def make_hypersearch_table(list_of_expers, outfile):
         folders = get_existing_folders(exper)
         for folder in folders:
             diversity = get_diversity(folder)
+            grad_div = get_param_std(folder, "Gradient Intensity")
+            dens_div = get_param_std(folder, "Cell Density")
             max_fitness = get_max_fitness(folder)
             avg_fitness, std_fitness = get_mean_std_fitness(folder)
 
-            data.append([folder.split("/")[1], SCALING_PARAM, CROSSOVER_RATE,
-                         diversity, max_fitness, avg_fitness, std_fitness])
+            data.append([folder.split("/")[-1], SCALING_PARAM, CROSSOVER_RATE,
+                         diversity, grad_div, dens_div, max_fitness, avg_fitness, std_fitness])
 
 
     df = pd.DataFrame(data, columns=['experiment', 'scaling_param_F',
-        'crossover_rate_Cr', 'diversity_score', 'max_fitness', 'avg_fitness', 'std_fitness'])
+        'crossover_rate_Cr', 'diversity_score', 'grad_diversity', 'dens_diversity', 'max_fitness', 'avg_fitness', 'std_fitness'])
 
     print df
     df.to_csv("./hypersearch_analysis_{}.csv".format(outfile))
 
+def get_last_gen_pngs(folder):
+    import os
+    all_files = os.listdir(folder+"/last_gens")
+    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
+    return all_pngs
+
+def make_summary_plot(exper):
+    from PIL import Image
+
+    folders = get_existing_folders(exper)
+    for folder in folders:
+        all_pngs = get_last_gen_pngs(folder)
+
+        images = [Image.open(folder+"/last_gens/"+x) for x in all_pngs]
+        width, height = images[0].size
+
+        new_width = width * 5
+        new_height = height * 20
+
+        new_im = Image.new('RGB', (new_width, new_height))
+
+        for i, im in enumerate(images):
+            new_im.paste(im, ((i % 5)*width, (i // 5)*height))
+
+        dst_folder = folder+"/summary_plot"
+        overwrite_create(dst_folder)
+        new_im.save(dst_folder+"/summary_plot.png")
+
+if __name__ == "__main__":
+    for each in ["E10-0", "E10-1"]:
+        separate_last_generation(each)
+        separate_high_fitness(each)
+        make_summary_plot(each)
 
 
-for each in ["E6-2", "E6-3"]:
-    separate_last_generation(each)
-    separate_high_fitness(each)
-    plot_fitness_trajectory(each)
+# -------------- ARCHIVE ----------------
+
+
+
+# E8s = map(lambda x: "E8-"+str(x), range(8))
+#
+# # for each in E8s:
+# #     separate_last_generation(each)
+# #     separate_high_fitness(each)
+# #     make_summary_plot(each)
+# #     plot_fitness_trajectory(each)
+#
+# plot_fitness_trajectory(E8s, color_by="two_exper", stats="mean")
+
+# -------------- ARCHIVE ----------------
+
+# plot_fitness_trajectory(["E6-0", "E6-1", "E6-2", "E6-3"])
+
+# make_hypersearch_table(["E6-0", "E6-1", "E6-2", "E6-3"], "E6")
+# make_hypersearch_table(["E7-0", "E7-1", "E7-2", "E7-3"], "E7")
+
+# separate_generation_n("E7-3", 209)
+# separate_last_generation("E7-3")
+
+# for each in ["E7-0", "E7-1", "E7-2", "E7-3"]:
+#     separate_last_generation(each)
+#     separate_high_fitness(each)
+#     plot_fitness_trajectory(each)
+
+# plot_fitness_trajectory(["E7-0", "E7-1"])
+# plot_fitness_trajectory(["E7-2", "E7-3"], color_by="single") # {"single", "exper"}
+
+# -------------- ARCHIVE ----------------
+
+# for each in ["E6-2", "E6-3"]:
+#     separate_last_generation(each)
+#     separate_high_fitness(each)
+#     plot_fitness_trajectory(each)
 
 # -------------- ARCHIVE ----------------
 
