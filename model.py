@@ -155,12 +155,16 @@ class Model(object):
             #self.repeats[best_repeat].global_stats[order_params, :].tolist()
         }
 
+        plot_data = self.plot(save=name)
+        data["plot_data"] = plot_data
+
         with open("{}.json".format(name), "w") as outfile:
             json.dump(data, outfile)
 
-        self.plot(save=name)
+
 
     def plot(self, save=None):
+        plot_data = []
         # smaller file size
         alpha = 0.5 #1
         velocity_trace = 0.3
@@ -197,7 +201,13 @@ class Model(object):
             plt.ylim([0, adjusted_limit])
             plt.axis("off")
             plt.title("fitness={}".format(tuple(round(x, 4) for x in rep.fitness) if len(rep.fitness) > 1 else round(rep.fitness[0], 4)))
-
+            plot_data.append({
+                "x": list(rep.pos_x),
+                "y": list(rep.pos_y),
+                "dir_x": list(rep.dir_x),
+                "dir_y": list(rep.dir_y),
+                "fitness": rep.fitness
+            })
 
         plt.subplots_adjust(left=0, bottom=0, right=1, top=0.85, hspace=0, wspace=0.1)
         plt.suptitle("overall fitness={}".format(tuple(round(x, 4) for x in self.fitness) if len(self.fitness) > 1 else round(self.fitness[0], 4)))
@@ -207,6 +217,7 @@ class Model(object):
         else:
             plt.savefig("{}.png".format(save))
         plt.close()
+        return plot_data
 
 
 class Repeat(object):

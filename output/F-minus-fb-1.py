@@ -9,7 +9,7 @@ Nov-11-2020
 
 # --------- Differential evolution parameters ---------
 STARTING_REP_ID = 0
-WHICH_ORDER_PARAM = 0 # 0: angular momentum, 1: alignment, 2: clustering,
+WHICH_ORDER_PARAM = "0-1" # 0: angular momentum, 1: alignment, 2: clustering,
 # 3: CM_x, 4: CM_y, 5: radial distance (CF), 6: pw distance, 7: nn distance,
 # 8: group migration, 9: radial distance (CM)
 # Boundary conditions of the simulation arena
