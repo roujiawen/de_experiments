@@ -29,8 +29,8 @@ NUM_GENERATION = 100
 POPULATION_SIZE = 100
 SCALING_PARAM = 0.8  # usually from (0,2] best 0.3
 CROSSOVER_RATE = 0.9  # usually from (0,1) best 0.8
-NUM_REPEATS = 5  # number of repeated runs for the same gene
-SIGNIFICANT_RANGE = [1000, 1500]  # range of steps to average over the fitness
+NUM_REPEATS = 3  # number of repeated runs for the same gene
+SIGNIFICANT_RANGE = [750, 1000]  # range of steps to average over the fitness
 
 MAX_OR_MIN = "MAX"  # choose from {"MAX", "MIN"}
 FITNESS_AGGREGATE = "mean_fitness" # choose from {"max_fitness", "mean_fitness"}
