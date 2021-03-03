@@ -14,14 +14,23 @@ def get_existing_folders(exper):
 
 def get_gen_ind_pairs(folder):
     """
-    Input: E3_spring
+    Input: /Users/work/de_exper/output/E3_spring
     Output: [(0, 0), (0, 1),...(199, 37)]
     """
     import os
     all_files = os.listdir(folder)
-    all_jsons = filter(lambda s: s[:3]=="Gen" and s[-5:]==".json", all_files)
-    gen_ind_pairs = map(lambda s: tuple(map(int, s[3:-5].split("_"))), all_jsons)
+    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
+    gen_ind_pairs = map(lambda s: tuple(map(int, s[3:-4].split("_"))), all_pngs)
     return gen_ind_pairs
+
+def get_last_gen_pairs(folder):
+    return get_gen_ind_pairs(folder+"/last_gens")
+
+def get_last_gen_pngs(folder):
+    import os
+    all_files = os.listdir(folder+"/last_gens")
+    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
+    return all_pngs
 
 def overwrite_create(dst):
     """
@@ -33,11 +42,11 @@ def overwrite_create(dst):
     if os.path.isdir(dst):
         shutil.rmtree(dst)
     # Create destination folder
-    os.mkdir(dst)
+    os.makedirs(dst)
 
 def read_ind_data(folder, gen, ind):
     """
-    Input: E3_spring, 0, 57
+    Input: /Users/work/de_exper/output/E3_spring, 0, 57
     """
     import json
     with open(folder+"/Gen{}_{}.json".format(gen, ind), "r") as infile:
@@ -46,7 +55,7 @@ def read_ind_data(folder, gen, ind):
 
 def get_fitness(folder, gen, ind):
     """
-    Input: E3_spring, 0, 57
+    Input: /Users/work/de_exper/output/E3_spring, 0, 57
     """
     ind_data = read_ind_data(folder, gen, ind)
     return ind_data["fitness"]
@@ -266,12 +275,6 @@ def plot_fitness_trajectory(arg, **kwargs):
     else:
         plot_single_fitness_trajectory(arg, **kwargs)
 
-def get_last_gen_pairs(folder):
-    import os
-    all_files = os.listdir(folder+"/last_gens")
-    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
-    gen_ind_pairs = map(lambda s: tuple(map(int, s[3:-4].split("_"))), all_pngs)
-    return gen_ind_pairs
 
 def make_hypersearch_table(list_of_expers, outfile):
     # Assuming PARAM_LIMITS doesn't change with the experiments
@@ -358,11 +361,7 @@ def make_hypersearch_table(list_of_expers, outfile):
     print df
     df.to_csv("./hypersearch_analysis_{}.csv".format(outfile))
 
-def get_last_gen_pngs(folder):
-    import os
-    all_files = os.listdir(folder+"/last_gens")
-    all_pngs = filter(lambda s: s[-4:]==".png", all_files)
-    return all_pngs
+
 
 def make_summary_plot(exper):
     from PIL import Image
@@ -387,7 +386,9 @@ def make_summary_plot(exper):
         new_im.save(dst_folder+"/summary_plot.png")
 
 if __name__ == "__main__":
-    for each in ["E10-0", "E10-1"]:
+    for each in ["K-ali-pb-1", "K-ali-pb-2"]:
+        #["G-clu-pb-1", "G-clu-pb-2", "G-clu-fb-1",  "G-clu-fb-2"]:
+        #, "G-ali-pb-1", "G-ali-pb-2", "G-ali-fb-1",  "G-ali-fb-2", "G-minus-pb-1", "G-minus-pb-2", "G-minus-fb-1",  "G-minus-fb-2"]:
         separate_last_generation(each)
         separate_high_fitness(each)
         make_summary_plot(each)
@@ -395,7 +396,10 @@ if __name__ == "__main__":
 
 # -------------- ARCHIVE ----------------
 
-
+# for each in ["E10-2", "E10-3"]:
+#     separate_last_generation(each)
+#     separate_high_fitness(each)
+#     make_summary_plot(each)
 
 # E8s = map(lambda x: "E8-"+str(x), range(8))
 #

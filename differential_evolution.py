@@ -33,6 +33,10 @@ FITNESS_AGGREGATE = getattr(exper_config, "FITNESS_AGGREGATE")
 DE_STRATEGY = getattr(exper_config, "DE_STRATEGY")
 NUM_REPEATS = getattr(exper_config, "NUM_REPEATS")
 STARTING_REP_ID = getattr(exper_config, "STARTING_REP_ID")
+try:
+    INITIAL_POP_PATH = getattr(exper_config, "INITIAL_POP_PATH")
+except:
+    INITIAL_POP_PATH = None
 
 def randomize(param):
     lower = PARAM_LIMITS[param][0]
@@ -81,17 +85,34 @@ def get_best_gene_from_last_gen(population):
             current_best_fitness = m.fitness
     return current_best_m.gene
 
-def evolve():
-    log_progress("Initializing...")
-    # Initialize population
-    population = []
+def generate_random_population():
     models = []
-
     # Random genes for initial population
     for indiv_id in range(POPULATION_SIZE):
         gene = random_gene()
         model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS, FITNESS_AGGREGATE)
         models.append(model)
+    return models
+
+def load_population(initial_pop_path):
+    with open(initial_pop_path, "r") as read_file:
+        data = json.load(read_file)
+    models = []
+    for indiv_id in range(len(data)):
+        gene = data[indiv_id]
+        model = Model(gene, SIGNIFICANT_RANGE, WHICH_ORDER_PARAM, GENERAL_PARAMS, NUM_REPEATS, FITNESS_AGGREGATE)
+        models.append(model)
+    return models
+
+def evolve(initial_pop_path=None):
+    log_progress("Initializing...")
+    # Initialize population
+    population = []
+
+    if initial_pop_path is None:
+        models = generate_random_population()
+    else:
+        models = load_population(initial_pop_path)
 
     all_repeats = reduce(add, [zip([i]*NUM_REPEATS, # indiv_id
                                    range(NUM_REPEATS), # rep_id
@@ -198,14 +219,14 @@ if __name__ == "__main__":
         OUT_PATH = "output/{}/".format(EXPER_NAME)
         if not os.path.exists(OUT_PATH):
             os.makedirs(OUT_PATH)
-        evolve()
+        evolve(initial_pop_path=INITIAL_POP_PATH)
     elif DENSITIES[0] is None:
         for i, _ in enumerate(DENSITIES):
             EXPER_NAME = "{}_{}".format(TRIAL_NAME, str(i))
             OUT_PATH = "output/{}/".format(EXPER_NAME)
             if not os.path.exists(OUT_PATH):
                 os.makedirs(OUT_PATH)
-            evolve()
+            evolve(initial_pop_path=INITIAL_POP_PATH)
     else:
         for i, den in enumerate(DENSITIES):
             if i < STARTING_REP_ID:
@@ -218,5 +239,5 @@ if __name__ == "__main__":
             OUT_PATH = "output/{}/".format(EXPER_NAME)
             if not os.path.exists(OUT_PATH):
                 os.makedirs(OUT_PATH)
-            evolve()
+            evolve(initial_pop_path=INITIAL_POP_PATH)
     log_progress("Done! Total time: {}".format(time.time()-start_time))
