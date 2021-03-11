@@ -1,0 +1,68 @@
+"""
+Mar-11-2021
+ - Within Vicsek PT param subspace: optimize for an order param value in the middle (e.g. 0.5)
+ - MAX_OR_MIN = ("CUSTOM", 0.5)
+ - NUM_GENERATION = 30, POPULATION_SIZE = 50, NUM_REPEATS = 5
+ - Copied from M-ali-pb-1; PARAM_LIMITS copied from V_PT2.py
+
+ Subexperiments (e.g. -1, -2, -3 ...) should each be different; num_restarts = 3
+
+"""
+
+# --------- Differential evolution parameters ---------
+STARTING_REP_ID = 0
+WHICH_ORDER_PARAM = 1 # 0: angular momentum, 1: alignment, 2: clustering,
+# 3: CM_x, 4: CM_y, 5: radial distance (CF), 6: pw distance, 7: nn distance,
+# 8: group migration, 9: radial distance (CM)
+# Boundary conditions of the simulation arena
+PERIODIC_BOUNDARY = True
+
+
+
+DENSITIES = []  # the set of densities to run experiments with; empty -> var
+
+NUM_GENERATION = 30
+POPULATION_SIZE = 50
+SCALING_PARAM = 0.8  # usually from (0,2] best 0.3
+CROSSOVER_RATE = 0.9  # usually from (0,1) best 0.8
+NUM_REPEATS = 5  # number of repeated runs for the same gene
+SIGNIFICANT_RANGE = [750, 1000]  # range of steps to average over the fitness
+
+MAX_OR_MIN = ("CUSTOM", 0.5)  # choose from {"MAX", "MIN", ("CUSTOM", obj_value)}
+FITNESS_AGGREGATE = "mean_fitness" # choose from {"max_fitness", "mean_fitness"}
+DE_STRATEGY = "rand1bin" # choose from {"rand1bin", "best1bin"}
+
+
+# --------- Feasible model parameter ranges in evolution ---------
+
+
+PARAM_LIMITS = {
+    "Gradient Intensity": [0.0, 0.0],
+    "Cell Density": [0.01, 0.3466],
+    "Angular Inertia": [0.01, 0.01],# in Vicsek the average of neighbor directions include the agent itself
+    "Alignment Force": [1.0, 1.0],
+    "Gradient Direction": [0.0, 0.0],
+    "Alignment Range": [10.0, 10.0], #
+    "Adhesion": [0.0, 0.0], #
+    "Interaction Force": [0.0, 0.0],
+    "Noise Intensity": [0.0, 0.7961], #
+    "Velocity": [0.03, 0.03], #
+    "Interaction Range": [2.0, 2.0] #
+}
+
+# --------- General model parameters ---------
+
+
+# How much the simulation is zoomed in
+SCALE_FACTOR = 1.0
+# Radius of the particles's hard core in the simulation
+CORE_RADIUS = 0.1
+# Linear size of the arena of the simulation
+FIELD_SIZE = 10.0
+
+GENERAL_PARAMS = {
+    "Periodic Boundary": PERIODIC_BOUNDARY,
+    "Scale Factor": SCALE_FACTOR,
+    "Core Radius": CORE_RADIUS,
+    "Field Size": FIELD_SIZE
+}

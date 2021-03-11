@@ -205,11 +205,17 @@ def evolve(initial_pop_path=None):
                 if model.fitness and model.fitness >= population[indiv_id].fitness:
                     population[indiv_id] = model
                     model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
-            else:
+            elif MAX_OR_MIN=="MIN":
                 if model.fitness and model.fitness <= population[indiv_id].fitness:
                     population[indiv_id] = model
                     model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
-
+            elif MAX_OR_MIN[0]=="CUSTOM":
+                obj_value = MAX_OR_MIN[1]
+                if model.fitness and np.abs(model.fitness[0] - obj_value) <= np.abs(population[indiv_id].fitness[0] - obj_value):
+                    population[indiv_id] = model
+                    model.save(OUT_PATH+"Gen{}_{}".format(gen_id, indiv_id))
+            else:
+                raise ValueError("MAX_OR_MIN is invalid!")
 
 if __name__ == "__main__":
     import time
