@@ -8,5 +8,11 @@ c_code.cpp
 venv/
 output/*
 !output/*.py
-paper_plots/output_plots
-paper_plots/scatter_samples
+paper_plots/
+phase_trans/
+phase_trans2/
+template_genes_G/
+template_genes_H/
+template_genes_L_PT1/
+template_genes_L_PT1_v2/
+template_genes_V/
