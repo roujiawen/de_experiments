@@ -23,5 +23,5 @@ def generate(INPUT_FOLDER, OUTPUT_FOLDER):
         json.dump(genes, write_file)
     print "Successfully wrote to", output_filepath
 
-generate("output/M-ali-pb-1", "initial_pop/M-ali-pb-3")
-generate("output/M-ali-pb-2", "initial_pop/M-ali-pb-4")
+generate("output/O-ali-pb-1", "initial_pop/O-ali-pb-3")
+generate("output/O-ali-pb-2", "initial_pop/O-ali-pb-4")
