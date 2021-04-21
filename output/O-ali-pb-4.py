@@ -6,7 +6,7 @@ Apr-12-2021
  - Copied from O-ali-pb-2: flexible density, noise, velocity
  - Added INITIAL_POP_PATH
  - Within Vicsek PT param subspace: minimize order param value
- - MAX_OR_MIN = MIN
+ - MAX_OR_MIN = MAX
  - NUM_GENERATION = 100, POPULATION_SIZE = 50, NUM_REPEATS = 3, SIGNIFICANT_RANGE = [1500, 2000]
 
  Subexperiments (e.g. -1, -2, -3 ...) should each be different; num_restarts = 3
@@ -35,7 +35,7 @@ CROSSOVER_RATE = 0.9  # usually from (0,1) best 0.8
 NUM_REPEATS = 3  # number of repeated runs for the same gene
 SIGNIFICANT_RANGE = [1500, 2000]  # range of steps to average over the fitness
 
-MAX_OR_MIN = "MIN"  # choose from {"MAX", "MIN", ("CUSTOM", obj_value)}
+MAX_OR_MIN = "MAX"  # choose from {"MAX", "MIN", ("CUSTOM", obj_value)}
 FITNESS_AGGREGATE = "mean_fitness" # choose from {"max_fitness", "mean_fitness"}
 DE_STRATEGY = "rand1bin" # choose from {"rand1bin", "best1bin"}
 
